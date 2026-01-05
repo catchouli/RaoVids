@@ -1,3 +1,4 @@
+using Config.Net;
 using RaoVids.Components;
 
 namespace RaoVids
@@ -6,6 +7,15 @@ namespace RaoVids
     {
         public static void Main(string[] args)
         {
+            // Load configuration from environment variables.
+            var appSettings = new ConfigurationBuilder<IAppSettings>()
+                .UseEnvironmentVariables()
+                .UseDotEnvFile()
+                .Build();
+
+            Console.WriteLine($"Database Host: {appSettings.DatabaseHost}");
+
+            // Create web application.
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
