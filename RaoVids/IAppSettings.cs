@@ -2,8 +2,6 @@
 {
     public interface IAppSettings
     {
-        string DatabaseHost { get; }
-        string DatabaseUsername { get; }
-        string DatabasePassword { get; }
+        string DatabaseConnString { get; }
     }
 }
