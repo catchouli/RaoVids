@@ -5,6 +5,7 @@ using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
 using Microsoft.EntityFrameworkCore;
 using RaoVids.Components;
+using RaoVids.Services;
 
 namespace RaoVids;
 
@@ -19,38 +20,44 @@ public class Program
             .Build();
 
         // Initialise youtube service.
-        var youtubeService = ConfigureYoutubeAPI(appSettings);
+        var ytApi = ConfigureYoutubeAPI(appSettings);
+        var ytService = new RaoVidsYoutubeService(ytApi);
 
-        // Iterate all of a channel's videos.
-        var listSearch = youtubeService.Search.List("snippet");
-        listSearch.ChannelId = "UCjM-Wd2651MWgo0s5yNQRJA";
-        listSearch.Order = SearchResource.ListRequest.OrderEnum.Date;
-        //listSearch.MaxResults = 50;
+        // Test calls.
+        var lastUpdated = new DateTimeOffset(2025, 12, 2, 4, 30, 49, TimeSpan.Zero);
 
-        while (true)
+        // Get channel details for channel "raocow", including the uploads playlist ID.
+        var channel = ytService.GetChannelDetails("raocow");
+
+        // Get some of the videos from the playlist.
+        var videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads);
+
+        Console.WriteLine("Got " + videos.Items.Count + " videos");
+        foreach (var video in videos.Items)
         {
-            Console.WriteLine("Request page");
+            Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
+        }
 
-            var res = listSearch.Execute();
-
-            Console.WriteLine("Results: " + res.Items.Count);
-
-            foreach (var item in res.Items)
-            {
-                Console.WriteLine($"Video ID: {item.Id.VideoId}, Title: {item.Snippet.Title}");
-            }
-
-            // End if there's no more pages.
-            if (res.NextPageToken == null)
-            {
-                Console.WriteLine("No next page token, end of search results");
-                break;
-            }
-
-            // Otherwise, request the next page.
-            listSearch.PageToken = res.NextPageToken;
-
+        while (videos.NextPageToken != null)
+        {
             Thread.Sleep(1000);
+
+            Console.WriteLine("Requesting next page...");
+
+            videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads, videos.NextPageToken);
+
+            Console.WriteLine("Got " + videos.Items.Count + " videos");
+            foreach (var video in videos.Items)
+            {
+                if (video.Snippet.PublishedAtDateTimeOffset < lastUpdated)
+                {
+                    Console.WriteLine($"Got to last upload date: {video.Snippet.PublishedAtDateTimeOffset}");
+                    videos.NextPageToken = null;
+                    break;
+                }
+
+                Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
+            }
         }
 
         Console.WriteLine("Done");
@@ -114,33 +121,6 @@ public class Program
     /// <returns>A newly initialised YoutubeService</returns>
     private static YouTubeService ConfigureYoutubeAPI(IAppSettings appSettings)
     {
-        //var json = $@"{{
-                //""installed"": {{
-                    //""client_id"": ""{appSettings.GoogleClientId}"",
-                    //""client_secret"": ""{appSettings.GoogleClientSecret}""
-                //}}
-            //}}";
-
-        // Configure YouTube API key.
-        //var googleClientSecrets = GoogleClientSecrets.FromStream(
-            //new MemoryStream(System.Text.Encoding.UTF8.GetBytes(
-                //$@"{{
-                        //""installed"": {{
-                            //""client_id"": ""{appSettings.GoogleClientId}"",
-                            //""client_secret"": ""{appSettings.GoogleClientSecret}""
-                        //}}
-                    //}}")
-            //)
-        //);
-
-        //var credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-            //googleClientSecrets.Secrets,
-            //new[] { "https://www.googleapis.com/auth/youtube" },
-            //"user",
-            //CancellationToken.None,
-            //new FileDataStore("RaoVids.GoogleOAuth")
-        //).Result;
-
         var youtubeService = new YouTubeService(new BaseClientService.Initializer()
         {
             ApplicationName = "RaoVids",
