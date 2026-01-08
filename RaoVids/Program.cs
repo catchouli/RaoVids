@@ -1,7 +1,5 @@
 using Config.Net;
-using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
-using Google.Apis.Util.Store;
 using Google.Apis.YouTube.v3;
 using Microsoft.EntityFrameworkCore;
 using RaoVids.Components;
@@ -22,48 +20,6 @@ public class Program
         // Initialise youtube service.
         var ytApi = ConfigureYoutubeAPI(appSettings);
         var ytService = new RaoVidsYoutubeService(ytApi);
-
-        // Test calls.
-        var lastUpdated = new DateTimeOffset(2025, 12, 2, 4, 30, 49, TimeSpan.Zero);
-
-        // Get channel details for channel "raocow", including the uploads playlist ID.
-        var channel = ytService.GetChannelDetails("raocow");
-
-        // Get some of the videos from the playlist.
-        var videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads);
-
-        Console.WriteLine("Got " + videos.Items.Count + " videos");
-        foreach (var video in videos.Items)
-        {
-            Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
-        }
-
-        while (videos.NextPageToken != null)
-        {
-            Thread.Sleep(1000);
-
-            Console.WriteLine("Requesting next page...");
-
-            videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads, videos.NextPageToken);
-
-            Console.WriteLine("Got " + videos.Items.Count + " videos");
-            foreach (var video in videos.Items)
-            {
-                if (video.Snippet.PublishedAtDateTimeOffset < lastUpdated)
-                {
-                    Console.WriteLine($"Got to last upload date: {video.Snippet.PublishedAtDateTimeOffset}");
-                    videos.NextPageToken = null;
-                    break;
-                }
-
-                Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
-            }
-        }
-
-        Console.WriteLine("Done");
-        return;
-
-        Console.WriteLine($"Database conn string: {appSettings.DatabaseConnString}");
 
         // Create web application.
         var builder = WebApplication.CreateBuilder(args);
@@ -130,4 +86,47 @@ public class Program
         return youtubeService;
     }
 
+    /// <summary>
+    /// A little test of the youtube service to make sure we can get all channel videos.
+    /// </summary>
+    private void TestYoutubeService(RaoVidsYoutubeService ytService)
+    {
+        // Test calls.
+        var lastUpdated = new DateTimeOffset(2025, 12, 2, 4, 30, 49, TimeSpan.Zero);
+
+        // Get channel details for channel "raocow", including the uploads playlist ID.
+        var channel = ytService.GetChannelDetails("raocow");
+
+        // Get some of the videos from the playlist.
+        var videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads);
+
+        Console.WriteLine("Got " + videos.Items.Count + " videos");
+        foreach (var video in videos.Items)
+        {
+            Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
+        }
+
+        while (videos.NextPageToken != null)
+        {
+            Thread.Sleep(1000);
+
+            Console.WriteLine("Requesting next page...");
+
+            videos = ytService.GetPlaylistVideos(channel.ContentDetails.RelatedPlaylists.Uploads, videos.NextPageToken);
+
+            Console.WriteLine("Got " + videos.Items.Count + " videos");
+            foreach (var video in videos.Items)
+            {
+                if (video.Snippet.PublishedAtDateTimeOffset < lastUpdated)
+                {
+                    Console.WriteLine($"Got to last upload date: {video.Snippet.PublishedAtDateTimeOffset}");
+                    videos.NextPageToken = null;
+                    break;
+                }
+
+                Console.WriteLine($"Got video: {video.Snippet.Title} ({video.Snippet.PublishedAtDateTimeOffset}");
+            }
+        }
+
+    }
 }
