@@ -28,14 +28,13 @@ public class Program
             .AddInteractiveServerComponents();
 
         // Add Entity Framework.
-        builder.Services
-            .AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(appSettings.DatabaseConnString));
+        builder.Services.AddDbContext<AppDbContext>(options =>
+            options.UseNpgsql(appSettings.DatabaseConnString));
 
         // Add application services.
         builder.Services.AddSingleton(ytApi);
         builder.Services.AddScoped<RaoVidsYoutubeService>();
-        builder.Services.AddScoped<ChannelsService>();
+        builder.Services.AddScoped<ChannelService>();
 
         // Build app.
         var app = builder.Build();

@@ -38,7 +38,7 @@ public class RaoVidsYoutubeService
 
             var channelResult = channelRequest.Execute();
 
-            if (channelResult.Items.Count != 0)
+            if (channelResult.Items != null && channelResult.Items.Count != 0)
             {
                 foundChannel = channelResult.Items[0];
             }
@@ -62,7 +62,29 @@ public class RaoVidsYoutubeService
 
                 var channelResult = channelRequest.Execute();
 
-                if (channelResult.Items.Count != 0)
+                if (channelResult.Items != null && channelResult.Items.Count != 0)
+                {
+                    foundChannel = channelResult.Items[0];
+                }
+            }
+            catch
+            {
+                // Ignore errors here too.
+            }
+        }
+
+        // Finally, try channel URL (sigh).
+        if (foundChannel == null)
+        {
+            try
+            {
+                // Get channel details.
+                var channelRequest = _apiService.Channels.List(parts);
+                channelRequest.ForHandle = usernameOrId;
+
+                var channelResult = channelRequest.Execute();
+
+                if (channelResult.Items != null && channelResult.Items.Count != 0)
                 {
                     foundChannel = channelResult.Items[0];
                 }

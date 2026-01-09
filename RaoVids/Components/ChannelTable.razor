@@ -1,0 +1,100 @@
+﻿@inject Services.ChannelService _channelService
+
+@code {
+    [SupplyParameterFromForm]
+    public string? channelIdToAdd { get; set; }
+
+    private string _info;
+    private string _error;
+
+    private int _channelCount;
+    private IEnumerable<Models.Channel> _allChannels = Enumerable.Empty<Models.Channel>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _channelCount = await _channelService.GetChannelCount();
+        _allChannels = await _channelService.GetAllChannels();
+    }
+
+    private string FormatLastUpdated(DateTimeOffset dateTimeOffset)
+    {
+        if (dateTimeOffset.Year <= 1970)
+        {
+            return "Never";
+        }
+        else
+        {
+            return dateTimeOffset.ToLocalTime().ToString("g");
+        }
+    }
+
+    private async Task SubmitAddChannel()
+    {
+        var trimmedChannelId = channelIdToAdd?.Trim();
+
+        if (trimmedChannelId == null || trimmedChannelId.Length == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await _channelService.AddChannel(trimmedChannelId);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+
+        _info = "Added channel " + trimmedChannelId;
+    }
+}
+
+<p>@_channelCount channel(s) registered</p>
+
+<h2>Channels</h2>
+
+<!-- Channels table -->
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col"></th>
+      <th scope="col">Channel Name</th>
+      <th scope="col">Last Updated</th>
+      <th scope="col">Video Count</th>
+    </tr>
+  </thead>
+  <tbody>
+      @foreach (var channel in _allChannels)
+      {
+          <tr>
+              <td><input type="checkbox" /></td>
+              <th scope="row" title="@channel.ChannelId">@channel.ChannelName</th>
+              <td>@FormatLastUpdated(channel.LastUpdatedAt)</td>
+              <td>@channel.VideoCount</td>
+          </tr>
+	}
+  </tbody>
+</table>
+
+<h2>Add Channel</h2>
+@if (_error != null) {
+    <div class="alert alert-warning" role="alert">
+        @_error
+    </div>
+}
+@if (_info != null) {
+    <div class="alert alert-info" role="alert">
+        @_info
+    </div>
+}
+
+
+<form method="post" @onsubmit="SubmitAddChannel" @formname="add-channel-form">
+    <AntiforgeryToken />
+    <div>
+        <label>Channel ID or Username: </label>
+		<InputText @bind-Value="channelIdToAdd" />
+        <button type="submit">Submit</button>
+    </div>
+</form>

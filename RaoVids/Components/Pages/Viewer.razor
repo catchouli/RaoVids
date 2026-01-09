@@ -1,0 +1,55 @@
+﻿@page "/viewer"
+@layout EmptyLayout
+
+@code {
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public string? channels { get; set; }
+
+	private readonly List<string> _channelsList = new List<string>();
+
+	protected override void OnParametersSet()
+	{
+		foreach (var channel in (channels ?? "").Split(","))
+		{
+			string trimmedChannel = channel.Trim();
+			if (trimmedChannel.Length > 0)
+			{
+				_channelsList.Add(trimmedChannel);
+			}
+		}
+
+		base.OnParametersSet();
+	}
+
+	private string FormatChannelsList()
+	{
+		if (_channelsList.Count == 0)
+		{
+			return "All channels";
+		}
+		else
+		{
+			return string.Join(", ", _channelsList);
+		}
+	}
+}
+
+<PageTitle>Video Viewer for @FormatChannelsList()</PageTitle>
+
+<iframe
+	style="margin: 0; width: 100%; height: 100%;"
+	src="https://www.youtube.com/embed/crXiwJ-WzZ8?si=nZOHwd3jpy12dbuP"
+	title="YouTube video player"
+	frameborder="0"
+	allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+	referrerpolicy="strict-origin-when-cross-origin"
+	allowfullscreen
+></iframe>
+
+<style>
+	html, body {
+		width: 100%;
+		height: 100%;
+	}
+</style>
