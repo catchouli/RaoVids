@@ -1,0 +1,24 @@
+﻿@page "/log"
+@using RaoVids.Models
+@inject Services.LogService _logService
+
+@code {
+	private IEnumerable<LogMessage> _logMessages = Enumerable.Empty<LogMessage>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		_logMessages = await _logService.GetLogMessagesAsync(20);
+	}
+}
+
+<PageTitle>Log</PageTitle>
+
+<h1>Log</h1>
+
+@foreach (var logEntry in _logMessages)
+{
+	<div class="log-entry">
+		<span class="log-timestamp">[@logEntry.Time.ToString("yyyy-MM-dd HH:mm:ss")]</span>
+		<span class="log-message">@logEntry.Message</span>
+	</div>
+}

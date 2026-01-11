@@ -10,18 +10,20 @@ namespace RaoVids.Services
     {
         private readonly AppDbContext _dbContext;
         private readonly RaoVidsYoutubeService _ytService;
+        private readonly LogService _logService;
 
-        public ChannelService(AppDbContext dbContext, RaoVidsYoutubeService ytService)
+        public ChannelService(AppDbContext dbContext, RaoVidsYoutubeService ytService, LogService logService)
         {
             _dbContext = dbContext;
             _ytService = ytService;
+            _logService = logService;
         }
 
         /// <summary>
         /// Get the total number of channels in the database.
         /// </summary>
         /// <returns>The channel count</returns>
-        public async Task<int> GetChannelCount()
+        public async Task<int> GetChannelCountAsync()
         {
             return await _dbContext.Channels.CountAsync();
         }
@@ -30,7 +32,7 @@ namespace RaoVids.Services
         /// Add a channel by ID or name.
         /// </summary>
         /// <param name="channelIdOrName">The channel ID or name.</param>
-        public async Task AddChannel(string channelIdOrName)
+        public async Task AddChannelAsync(string channelIdOrName)
         {
             // Look up channel details using youtube service.
             var channelDetails = _ytService.GetChannelDetails(channelIdOrName);
@@ -65,6 +67,8 @@ namespace RaoVids.Services
             {
                 await _dbContext.Channels.AddAsync(channel);
                 await _dbContext.SaveChangesAsync();
+
+                await _logService.AddLogMessageAsync($"Added channel {channel.ChannelName} ({channel.ChannelId})");
             }
             catch (DbUpdateException e)
             {
@@ -76,7 +80,7 @@ namespace RaoVids.Services
         /// Get all channels
         /// </summary>
         /// <returns>An enumerable of all the registered channels</returns>
-        public async Task<IEnumerable<Channel>> GetAllChannels()
+        public async Task<IEnumerable<Channel>> GetAllChannelsAsync()
         {
             return await _dbContext.Channels.ToListAsync();
         }

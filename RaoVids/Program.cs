@@ -35,9 +35,20 @@ public class Program
         builder.Services.AddSingleton(ytApi);
         builder.Services.AddScoped<RaoVidsYoutubeService>();
         builder.Services.AddScoped<ChannelService>();
+        builder.Services.AddScoped<LogService>();
 
         // Build app.
         var app = builder.Build();
+
+        // Run migrations on database.
+        using (var scope = app.Services.CreateScope())
+        {
+            var logService = scope.ServiceProvider.GetRequiredService<LogService>();
+            await logService.AddLogMessageAsync("Running database migrations");
+
+            var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            await dbContext.Database.MigrateAsync();
+        }
 
         // Configure the HTTP request pipeline.
         if (!app.Environment.IsDevelopment())

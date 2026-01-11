@@ -6,6 +6,7 @@ namespace RaoVids;
 public class AppDbContext : DbContext
 {
     public DbSet<Channel> Channels { get; set; }
+    public DbSet<LogMessage> LogMessages { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)

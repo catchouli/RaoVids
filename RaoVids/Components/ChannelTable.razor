@@ -13,8 +13,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _channelCount = await _channelService.GetChannelCount();
-        _allChannels = await _channelService.GetAllChannels();
+        _channelCount = await _channelService.GetChannelCountAsync();
+        _allChannels = await _channelService.GetAllChannelsAsync();
     }
 
     private string FormatLastUpdated(DateTimeOffset dateTimeOffset)
@@ -46,7 +46,8 @@
         // Add channel and catch any errors.
         try
         {
-            await _channelService.AddChannel(trimmedChannelId);
+            await _channelService.AddChannelAsync(trimmedChannelId);
+			_allChannels = await _channelService.GetAllChannelsAsync();
 			SetStatus(InfoBoxType.Info, "Added channel " + trimmedChannelId);
         }
         catch (Exception ex)

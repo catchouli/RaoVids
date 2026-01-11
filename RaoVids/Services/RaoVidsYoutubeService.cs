@@ -27,7 +27,7 @@ public class RaoVidsYoutubeService
     /// <returns>The found channel details, or null if channel was not found</returns>
     public Channel GetChannelDetails(string usernameOrId, string parts = "snippet,contentDetails")
     {
-        Channel foundChannel = null;
+        Channel? foundChannel = null;
 
         // Try looking up channel by ID.
         try
@@ -102,7 +102,7 @@ public class RaoVidsYoutubeService
     /// Get the videos in a playlist.
     /// </summary>
     /// <param name="playlistId">The playlist ID</param>
-    public PlaylistItemListResponse GetPlaylistVideos(string playlistId, string pageToken = null, int maxResults = 50)
+    public PlaylistItemListResponse GetPlaylistVideos(string playlistId, string? pageToken = null, int maxResults = 50)
     {
         var playlistItemsRequest = _apiService.PlaylistItems.List("id,snippet");
         playlistItemsRequest.PlaylistId = playlistId;
