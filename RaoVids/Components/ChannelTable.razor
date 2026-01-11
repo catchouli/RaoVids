@@ -1,11 +1,12 @@
-﻿@inject Services.ChannelService _channelService
+﻿@using static RaoVids.Components.InfoBox
+@inject Services.ChannelService _channelService
 
 @code {
     [SupplyParameterFromForm]
     public string? channelIdToAdd { get; set; }
 
-    private string _info;
-    private string _error;
+    private InfoBoxType _addChannelStatus = InfoBoxType.Info;
+    private string? _addChannelMessage;
 
     private int _channelCount;
     private IEnumerable<Models.Channel> _allChannels = Enumerable.Empty<Models.Channel>();
@@ -30,24 +31,41 @@
 
     private async Task SubmitAddChannel()
     {
+        // Clear error/info status box.
+        ClearStatus();
+
+        // Sanitize input.
         var trimmedChannelId = channelIdToAdd?.Trim();
 
         if (trimmedChannelId == null || trimmedChannelId.Length == 0)
         {
+            SetStatus(InfoBoxType.Error, "No channel ID or name specified");
             return;
         }
 
+        // Add channel and catch any errors.
         try
         {
             await _channelService.AddChannel(trimmedChannelId);
+			SetStatus(InfoBoxType.Info, "Added channel " + trimmedChannelId);
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            SetStatus(InfoBoxType.Error, ex.Message);
         }
-
-        _info = "Added channel " + trimmedChannelId;
     }
+
+    private void SetStatus(InfoBoxType type, string message)
+    {
+        _addChannelStatus = type;
+        _addChannelMessage = message;
+	}
+
+    private void ClearStatus()
+    {
+        _addChannelStatus = InfoBoxType.Info;
+        _addChannelMessage = null;
+	}
 }
 
 <p>@_channelCount channel(s) registered</p>
@@ -78,17 +96,7 @@
 </table>
 
 <h2>Add Channel</h2>
-@if (_error != null) {
-    <div class="alert alert-warning" role="alert">
-        @_error
-    </div>
-}
-@if (_info != null) {
-    <div class="alert alert-info" role="alert">
-        @_info
-    </div>
-}
-
+<InfoBox Message="@_addChannelMessage" Type="@_addChannelStatus" />
 
 <form method="post" @onsubmit="SubmitAddChannel" @formname="add-channel-form">
     <AntiforgeryToken />

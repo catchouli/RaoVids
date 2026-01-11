@@ -1,0 +1,31 @@
+﻿@code {
+	public enum InfoBoxType
+	{
+		Info,
+		Warning,
+		Error
+	}
+
+	[Parameter]
+	public InfoBoxType Type { get; set; } = InfoBoxType.Info;
+
+	[Parameter]
+	public string Message { get; set; }
+
+	private string GetAlertClass()
+	{
+		return Type switch
+		{
+			InfoBoxType.Info => "alert-info",
+			InfoBoxType.Warning => "alert-warning",
+			InfoBoxType.Error => "alert-danger",
+			_ => "alert-info"
+		};
+	}
+}
+
+@if (Message != null) {
+    <div class="alert @GetAlertClass()" role="alert">
+        @Message
+    </div>
+}
