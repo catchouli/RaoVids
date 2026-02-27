@@ -1,5 +1,5 @@
 # RaoVids
-Random youtube video aggregator and player for raocow. (wip, doesn't work yet. TODO: update readme :)
+Random youtube video aggregator and player for raocow.
 
 ## How to run (dev mode)
 A development compose.yaml is provided for starting a dev database with docker-compose.
@@ -17,6 +17,8 @@ cp .env.example .env
 dotnet run
 
 ```
+
+A youtube data API key is necessary for video scanning to work.
 
 ## How to run (production)
 Use the provided docker image (ghcr.io/catchouli/raovids) or helm chart (in the `helm` directory). If using docker directly, you'll need to specify the configuration either by binding a .env file at /app or using environment variables. See `.env.example` for a configuration example.
