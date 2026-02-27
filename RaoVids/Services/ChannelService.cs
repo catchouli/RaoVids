@@ -84,5 +84,38 @@ namespace RaoVids.Services
         {
             return await _dbContext.Channels.ToListAsync();
         }
+
+        /// <summary>
+        /// Get up to maxResults random videos for the listed channel names.
+        /// </summary>
+        /// <param name="channelNames">The channel names to look up</param>
+        /// <param name="maxResults">The max videos returned</param>
+        /// <returns>The IDs of selected videos</returns>
+        public async Task<IEnumerable<string>> GetRandomVideos(IEnumerable<string> channelNames,
+            int maxResults)
+        {
+            // Look up channel IDs corresponding to channel names.
+            var channelIds = _dbContext.Channels
+                .Where(c => channelNames.Contains(c.ChannelName))
+                .Select(c => c.ChannelId)
+                .ToList();
+
+            // Get maxResults random videos from those channels.
+            var videoQuery = _dbContext.Videos.AsQueryable();
+
+            // If any channel names were specified use those, otherwise query all channels.
+            if (channelIds.Any())
+            {
+                videoQuery = videoQuery.Where(v => channelIds.Contains(v.ChannelId));
+            }
+
+            var videoIds = videoQuery
+                .OrderBy(r => Guid.NewGuid())
+                .Take(maxResults)
+                .Select(v => v.VideoId)
+                .ToList();
+
+            return videoIds;
+        }
     }
 }

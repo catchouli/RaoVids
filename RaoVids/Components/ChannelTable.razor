@@ -2,6 +2,8 @@
 @inject Services.ChannelService _channelService
 
 @code {
+    private const int DefaultMaxResults = 100;
+
     [SupplyParameterFromForm]
     public string? channelIdToAdd { get; set; }
 
@@ -87,7 +89,7 @@
       @foreach (var channel in _allChannels)
       {
           <tr>
-              <td><input type="checkbox" /></td>
+              <td><input type="checkbox" class="channel-checkbox" data-channel="@channel.ChannelName" /></td>
               <th scope="row" title="@channel.ChannelId">@channel.ChannelName</th>
               <td>@FormatLastUpdated(channel.LastUpdatedAt)</td>
               <td>@channel.VideoCount</td>
@@ -95,6 +97,47 @@
 	}
   </tbody>
 </table>
+
+<div style="margin-bottom: 1em">
+    <label>Play random videos: </label>
+    <input type="number" id="maxResultsCount" Value="@DefaultMaxResults" />
+    <button type="submit" onclick="openViewer()">Open viewer</button>
+</div>
+
+<script>
+    function openViewer() {
+        // Get max results from input.
+        const maxResults = document.getElementById('maxResultsCount').value;
+
+        // Get channels from checked boxes, a little trickier.
+        let channels = [];
+
+        const checkboxes = document.getElementsByClassName('channel-checkbox');
+        for (let i = 0; i < checkboxes.length; ++i) {
+            const checkbox = checkboxes[i];
+
+            if (checkbox.checked) {
+                channels.push(checkbox.dataset.channel);
+            }
+        }
+
+        // Convert channels array to comma-separated string for passing in URL.
+        const channelList = channels.join(',');
+
+        // Log values for debugging.
+        console.log('Opening viewer for channels ' + channelList + ' and results ' + maxResults);
+
+        // Build URL.
+        let url = `/viewer?count=${maxResults}`;
+
+        if (channelList.length > 0) {
+            url += `&channels=${channelList}`;
+        }
+
+        // Redirect to url.
+        window.location = url;
+    }
+</script>
 
 <h2>Add Channel</h2>
 <InfoBox Message="@_addChannelMessage" Type="@_addChannelStatus" />

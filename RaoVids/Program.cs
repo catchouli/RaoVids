@@ -36,6 +36,7 @@ public class Program
         builder.Services.AddScoped<RaoVidsYoutubeService>();
         builder.Services.AddScoped<ChannelService>();
         builder.Services.AddScoped<LogService>();
+        builder.Services.AddHostedService<VideoScannerService>();
 
         // Build app.
         var app = builder.Build();
