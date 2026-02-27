@@ -44,11 +44,11 @@ public class Program
         // Run migrations on database.
         using (var scope = app.Services.CreateScope())
         {
-            var logService = scope.ServiceProvider.GetRequiredService<LogService>();
-            await logService.AddLogMessageAsync("Running database migrations");
-
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await dbContext.Database.MigrateAsync();
+
+            var logService = scope.ServiceProvider.GetRequiredService<LogService>();
+            await logService.AddLogMessageAsync("Running database migrations");
         }
 
         // Configure the HTTP request pipeline.
