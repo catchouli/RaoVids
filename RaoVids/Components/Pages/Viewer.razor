@@ -175,7 +175,7 @@
 	}
 
 	function onPlayerReady(event) {
-		const player = eventtarget;
+		const player = event.target;
 		const playerIndex = player.options.playerIndex;
 
 		console.log(`Player ${playerIndex} ready, loading playlist and playing video`);
