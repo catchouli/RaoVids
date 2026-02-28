@@ -1,6 +1,14 @@
 # RaoVids
 Random youtube video aggregator and player for raocow.
 
+<!-- Screenshot gallery -->
+<a href="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/home.png">
+  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/home_thumb.jpg">
+</a>
+<a href="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/viewer.png">
+  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/viewer_thumb.jpg">
+</a>
+
 ## How to run (dev mode)
 A development compose.yaml is provided for starting a dev database with docker-compose.
 
