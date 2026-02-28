@@ -2,11 +2,11 @@
 Random youtube video aggregator and player for raocow.
 
 <!-- Screenshot gallery -->
-<a href="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/home.png">
-  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/home_thumb.jpg">
+<a href="https://raw.githubusercontent.com/catchouli/RaoVids/refs/heads/main/screenshots/home.png">
+  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/refs/heads/main/screenshots/home_thumb.png">
 </a>
-<a href="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/viewer.png">
-  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/main/screenshots/viewer_thumb.jpg">
+<a href="https://raw.githubusercontent.com/catchouli/RaoVids/refs/heads/main/screenshots/viewer.png">
+  <img src="https://raw.githubusercontent.com/catchouli/RaoVids/refs/heads/main/screenshots/viewer_thumb.png">
 </a>
 
 ## How to run (dev mode)
