@@ -10,13 +10,15 @@ namespace RaoVids.Services;
 public class RaoVidsYoutubeService
 {
     private readonly YouTubeService _apiService;
+    private readonly InvokeScanService _invokeScanService;
 
     /// <summary>
     /// Construct a new RaoVids YouTube service.
     /// </summary>
-    public RaoVidsYoutubeService(YouTubeService apiService)
+    public RaoVidsYoutubeService(YouTubeService apiService, InvokeScanService invokeScanService)
     {
         _apiService = apiService;
+        _invokeScanService = invokeScanService;
     }
 
     /// <summary>

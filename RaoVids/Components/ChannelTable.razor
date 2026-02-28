@@ -1,8 +1,12 @@
 ﻿@using static RaoVids.Components.InfoBox
 @inject Services.ChannelService _channelService
+@inject Services.InvokeScanService _invokeScanService
+@inject Services.LogService _logService
 
 @code {
     private const int DefaultMaxResults = 100;
+    private const int DefaultPlayerRows = 1;
+    private const int DefaultPlayerColumns = 1;
 
     [SupplyParameterFromForm]
     public string? channelIdToAdd { get; set; }
@@ -49,13 +53,22 @@
         try
         {
             await _channelService.AddChannelAsync(trimmedChannelId);
-			_allChannels = await _channelService.GetAllChannelsAsync();
-			SetStatus(InfoBoxType.Info, "Added channel " + trimmedChannelId);
+            _allChannels = await _channelService.GetAllChannelsAsync();
+            SetStatus(InfoBoxType.Info, "Added channel " + trimmedChannelId);
         }
         catch (Exception ex)
         {
             SetStatus(InfoBoxType.Error, ex.Message);
         }
+
+        // Force a channel rescan now.
+        await ForceChannelRescan();
+    }
+
+    private async Task ForceChannelRescan()
+    {
+        await _logService.AddLogMessageAsync("Forcing channel rescan now");
+        _invokeScanService.InvokeScan();
     }
 
     private void SetStatus(InfoBoxType type, string message)
@@ -98,16 +111,12 @@
   </tbody>
 </table>
 
-<div style="margin-bottom: 1em">
-    <label>Play random videos: </label>
-    <input type="number" id="maxResultsCount" Value="@DefaultMaxResults" />
-    <button type="submit" onclick="openViewer()">Open viewer</button>
-</div>
-
 <script>
     function openViewer() {
         // Get max results from input.
         const maxResults = document.getElementById('maxResultsCount').value;
+        const playerRows = document.getElementById('playerRows').value;
+        const playerColumns = document.getElementById('playerColumns').value;
 
         // Get channels from checked boxes, a little trickier.
         let channels = [];
@@ -134,12 +143,41 @@
             url += `&channels=${channelList}`;
         }
 
+        if (playerRows > 1) {
+            url += `&rows=${playerRows}`;
+        }
+
+        if (playerColumns > 1) {
+            url += `&columns=${playerColumns}`;
+        }
+
         // Redirect to url.
         window.location = url;
     }
 </script>
 
-<h2>Add Channel</h2>
+<h2 style="margin-top: 1em">Play random videos</h2>
+<div>
+    <table>
+        <tr>
+            <td><label>Video count: </label></td>
+            <td><input type="number" id="maxResultsCount" Value="@DefaultMaxResults" /></td>
+        </tr>
+        <tr>
+            <td><label>Layout: </label></td>
+            <td>
+                <input type="number" id="playerRows" Value="@DefaultPlayerRows" />
+                x
+                <input type="number" id="playerColumns" Value="@DefaultPlayerColumns" />
+            </td>
+        </tr>
+    </table>
+    <br>
+    <button type="submit" onclick="openViewer()">Open viewer</button>
+</div>
+
+
+<h2 style="margin-top: 1em">Add Channel</h2>
 <InfoBox Message="@_addChannelMessage" Type="@_addChannelStatus" />
 
 <form method="post" @onsubmit="SubmitAddChannel" @formname="add-channel-form">
@@ -150,3 +188,13 @@
         <button type="submit">Submit</button>
     </div>
 </form>
+
+<h2 style="margin-top: 1em">Force Rescan</h2>
+<form method="post" @onsubmit="ForceChannelRescan" @formname="force-rescan-form">
+    <AntiforgeryToken />
+    <div>
+        <label>Force a channel rescan now: </label>
+        <button type="submit">Rescan</button>
+    </div>
+</form>
+

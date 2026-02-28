@@ -32,20 +32,33 @@
 	public int? count { get; set; }
 
 	/// <summary>
+	/// The number of rows to show, the total video players requested is rows * columns.
+	/// </summary>
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public int? rows { get; set; }
+
+	/// <summary>
+	/// The number of columns to show, the total video players requested is rows * columns.
+	/// </summary>
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public int? columns { get; set; }
+
+	/// <summary>
 	/// The trimmed channels list.
 	/// </summary>
 	private readonly List<string> _channelsList = new List<string>();
-
-	/// <summary>
-	/// The video ids returned for this query.
-	/// </summary>
-	private readonly List<string> _videoIds = new List<string>();
 
 	/// <summary>
 	/// Process set parameters to populate the channels list.
 	/// </summary>
 	protected override void OnParametersSet()
 	{
+		// Set default values.
+		rows = rows ?? 1;
+		columns = columns ?? 1;
+
 		foreach (var channel in (channels ?? "").Split(","))
 		{
 			string trimmedChannel = channel.Trim();
@@ -59,13 +72,6 @@
 	}
 
 	/// <summary>
-	/// On initialize, look up videos for the requested channels and populate the video ids list.
-	/// </summary>
-	protected override async Task OnInitializedAsync()
-	{
-	}
-
-	/// <summary>
 	/// After rendering is complete the first time, pass video list to page and initialise the video viewer.
 	/// </summary>
 	protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -73,11 +79,16 @@
 		if (firstRender)
 		{
 			// Look up video IDs.
-            _videoIds.AddRange(await _channelService.GetRandomVideos(_channelsList, RequestedVideoCount()));
+			var playlists = new List<IEnumerable<string>>();
+
+			for (int i = 0; i < rows * columns; ++i)
+			{
+				playlists.Add(await _channelService.GetRandomVideos(_channelsList, RequestedVideoCount()));
+			}
 
 			// Initialise player.
 			Console.WriteLine("Invoking createViewer");
-			await _jsRuntime.InvokeVoidAsync("createViewer", _videoIds);
+			await _jsRuntime.InvokeVoidAsync("createViewer", rows, columns, playlists);
 		}
 	}
 
@@ -97,22 +108,41 @@
 			return string.Join(", ", _channelsList);
 		}
 	}
+
+	public string FlexBasis()
+	{
+		int totalVideos = rows.Value * columns.Value;
+		return Math.Floor(100.0f / (float)rows) + "%";
+    }
 }
 
-<PageTitle>Video Viewer for @FormatChannelsList() (@RequestedVideoCount())</PageTitle>
+<PageTitle>Video Viewer for @FormatChannelsList() (@RequestedVideoCount()) [@rows x @columns]</PageTitle>
 
-<div id="player"></div>
+<div id="player-container"></div>
 
 <script>
-	var player;
+	var _players = [];
+	var _columns = 1;
+	var _rows = 1;
+	var _videoPlaylists;
 
-	function createViewer(videoIds) {
-		if (videoIds == null || videoIds.length == 0) {
-			videoIds = ['SHvhps47Lmc'];
+	function createViewer(rows, columns, videoPlaylists) {
+		_columns = columns;
+		_rows = rows;
+        _videoPlaylists = videoPlaylists;
+
+		// Specify default video ID to use if no playlists are provided.
+		if (_videoPlaylists == null || _videoPlaylists.length == 0) {
+			_videoPlaylists = [['SHvhps47Lmc']];
 		}
 
-		// Store video IDs in document.
-		document.videoIds = videoIds;
+		// Create player containers.
+        const container = document.getElementById('player-container');
+		for (let i = 1; i <= _columns * _rows; ++i) {
+			const playerDiv = document.createElement('div');
+			playerDiv.id = `player${i}`;
+			container.appendChild(playerDiv);
+        }
 
 		// Load in the iframe player API code asynhcronously.
 		let tag = document.createElement("script");
@@ -122,25 +152,36 @@
 	}
 
 	function onYouTubeIframeAPIReady() {
-		console.log('Creating youtube player');
-		player = new YT.Player('player', {
-			height: '100%',
-			width: '100%',
-			videoId: document.videoIds[0],
-			playerVars: {
-				'playsinline': 1
-			},
-			events: {
-				'onReady': onPlayerReady,
-				'onStateChange': onPlayerStateChange
-			}
-		});
+		const playerCount = _rows * _columns;
+		console.log(`Creating ${playerCount} youtube players`);
+
+		for (let i = 0; i < playerCount; ++i) {
+            _players.push(new YT.Player(`player${i+1}`, {
+				width: '',
+				height: '',
+                videoId: _videoPlaylists[i][0],
+                playerVars: {
+                    'playsinline': 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                },
+
+				// Our own custom playerIndex property, which we use to load the right playlist below.
+				playerIndex: i,
+            }));
+        }
 	}
 
 	function onPlayerReady(event) {
-		console.log('Player ready, loading playlist and playing video');
-		event.target.loadPlaylist(document.videoIds.join(','));
-		event.target.playVideo();
+		const player = eventtarget;
+		const playerIndex = player.options.playerIndex;
+
+		console.log(`Player ${playerIndex} ready, loading playlist and playing video`);
+		player.mute();
+		player.loadPlaylist(_videoPlaylists[playerIndex].join(','));
+		player.playVideo();
 	}
 
 	function onPlayerStateChange(event) {
@@ -153,5 +194,19 @@
 	html, body {
 		width: 100%;
 		height: 100%;
+		background: black;
+		overflow: hidden;
+	}
+
+	#player-container {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		flex-wrap: wrap;
+	}
+
+	#player-container > iframe {
+		flex-grow: 1;
+		flex-basis: @FlexBasis();
 	}
 </style>

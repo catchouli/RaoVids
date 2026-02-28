@@ -10,12 +10,15 @@ public class VideoScannerService : BackgroundService
 {
     private readonly ILogger<VideoScannerService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TimeSpan _scanInterval = TimeSpan.FromMinutes(5);
+    private readonly InvokeScanService _invokeScanService;
+    private readonly TimeSpan _scanInterval = TimeSpan.FromMinutes(30);
 
-    public VideoScannerService(ILogger<VideoScannerService> logger, IServiceProvider serviceProvider)
+    public VideoScannerService(ILogger<VideoScannerService> logger, IServiceProvider serviceProvider,
+        InvokeScanService invokeScanService)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
+        _invokeScanService = invokeScanService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,8 +36,22 @@ public class VideoScannerService : BackgroundService
                 _logger.LogError(ex, "An error occurred while scanning channels.");
             }
 
+            // Get cancellation token from the invoke scan service, which will be cancelled if an
+            // immediate scan is requested.
+            var invokeScanToken = _invokeScanService.GetCancellationToken();
+
             // Wait for the specified interval before scanning again
-            await Task.Delay(_scanInterval, stoppingToken);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, invokeScanToken);
+
+            try
+            {
+                await Task.Delay(_scanInterval, linkedCts.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                // If the delay was cancelled due to an invoke scan, just continue to the next loop iteration to scan
+                // immediately. Otherwise the loop condition will cause it to exit immediately.
+            }
         }
 
         _logger.LogInformation("VideoScannerService is stopping.");
@@ -84,11 +101,12 @@ public class VideoScannerService : BackgroundService
         bool isFirstScan = channel.LastUpdatedAt == default(DateTimeOffset);
 
         // Fetch all videos from the playlist
-        string pageToken = null;
+        string? pageToken = null;
         int addedVideoCount = 0;
 
         do
         {
+            int addedVideosThisTime = 0;
             var playlistVideos = ytService.GetPlaylistVideos(uploadsPlaylistId, pageToken);
 
             if (playlistVideos.Items == null || playlistVideos.Items.Count == 0)
@@ -123,7 +141,8 @@ public class VideoScannerService : BackgroundService
                     };
 
                     await dbContext.Videos.AddAsync(video, stoppingToken);
-                    addedVideoCount++;
+                    addedVideoCount += 1;
+                    addedVideosThisTime += 1;
                 }
             }
 
@@ -135,19 +154,34 @@ public class VideoScannerService : BackgroundService
 
             pageToken = playlistVideos.NextPageToken;
 
+            // If videos were added, update the channel video count and save changes now so the user can start using
+            // them. This is mainly important for big channels that take a long time to scan.
+            if (addedVideosThisTime > 0)
+            {
+                await logService.AddLogMessageAsync($"Added {addedVideosThisTime} new videos for channel {channel.ChannelName} (total added: {addedVideoCount})");
+
+                channel.VideoCount = await dbContext.Videos
+                    .Where(v => v.ChannelId == channel.ChannelId)
+                    .CountAsync(stoppingToken);
+
+                await dbContext.SaveChangesAsync(stoppingToken);
+            }
+
             // Be respectful to the API with a small delay
             await Task.Delay(100, stoppingToken);
         } while (!string.IsNullOrEmpty(pageToken) && !stoppingToken.IsCancellationRequested);
+
+        // Save changes now we're done so we can get the new video count.
+        await dbContext.SaveChangesAsync(stoppingToken);
 
         // Update channel's last updated time and video count
         channel.LastUpdatedAt = DateTimeOffset.UtcNow;
         channel.VideoCount = await dbContext.Videos
             .Where(v => v.ChannelId == channel.ChannelId)
-            .CountAsync(stoppingToken)
-            + addedVideoCount;
-
+            .CountAsync(stoppingToken);
         await dbContext.SaveChangesAsync(stoppingToken);
 
+        // Log scan completion and number of videos added.
         string message = isFirstScan
             ? $"Scanned channel {channel.ChannelName}: found {addedVideoCount} new videos (total: {channel.VideoCount})"
             : $"Scanned channel {channel.ChannelName}: found {addedVideoCount} new videos";

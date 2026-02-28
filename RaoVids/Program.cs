@@ -33,6 +33,7 @@ public class Program
 
         // Add application services.
         builder.Services.AddSingleton(ytApi);
+        builder.Services.AddSingleton<InvokeScanService>();
         builder.Services.AddScoped<RaoVidsYoutubeService>();
         builder.Services.AddScoped<ChannelService>();
         builder.Services.AddScoped<LogService>();
