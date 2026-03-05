@@ -7,6 +7,7 @@
     private const int DefaultMaxResults = 100;
     private const int DefaultPlayerRows = 1;
     private const int DefaultPlayerColumns = 1;
+    private const int DefaultTitleSize = 1;
 
     [SupplyParameterFromForm]
     public string? channelIdToAdd { get; set; }
@@ -117,6 +118,7 @@
         const maxResults = document.getElementById('maxResultsCount').value;
         const playerRows = document.getElementById('playerRows').value;
         const playerColumns = document.getElementById('playerColumns').value;
+        const titleSize = document.getElementById('titleSize').value;
 
         // Get channels from checked boxes, a little trickier.
         let channels = [];
@@ -151,17 +153,25 @@
             url += `&columns=${playerColumns}`;
         }
 
+        if (titleSize != 1) {
+            url += `&titleSize=${titleSize}`;
+        }
+
         // Redirect to url.
         window.location = url;
     }
 </script>
 
 <h2 style="margin-top: 1em">Play random videos</h2>
-<div>
+<form onsubmit="openViewer(); return false;">
     <table>
         <tr>
             <td><label>Video count: </label></td>
             <td><input type="number" id="maxResultsCount" Value="@DefaultMaxResults" /></td>
+        </tr>
+        <tr>
+            <td><label>Title size: </label></td>
+            <td><input type="number" step="0.1" id="titleSize" Value="@DefaultTitleSize" /></td>
         </tr>
         <tr>
             <td><label>Layout: </label></td>
@@ -173,8 +183,8 @@
         </tr>
     </table>
     <br>
-    <button type="submit" onclick="openViewer()">Open viewer</button>
-</div>
+    <button type="submit">Open viewer</button>
+</form>
 
 
 <h2 style="margin-top: 1em">Add Channel</h2>

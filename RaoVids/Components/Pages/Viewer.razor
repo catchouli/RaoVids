@@ -46,6 +46,14 @@
 	public int? columns { get; set; }
 
 	/// <summary>
+	/// The size of the video title to include.
+	/// </summary>
+	[SupplyParameterFromQuery]
+	[Parameter]
+	public float? titleSize { get; set; }
+
+
+	/// <summary>
 	/// The trimmed channels list.
 	/// </summary>
 	private readonly List<string> _channelsList = new List<string>();
@@ -58,6 +66,7 @@
 		// Set default values.
 		rows = rows ?? 1;
 		columns = columns ?? 1;
+		titleSize = titleSize ?? 1.0f;
 
 		foreach (var channel in (channels ?? "").Split(","))
 		{
@@ -113,7 +122,12 @@
 	{
 		int totalVideos = rows.Value * columns.Value;
 		return Math.Floor(100.0f / (float)rows) + "%";
-    }
+	}
+
+	public string TitleSize()
+	{
+		return $"{titleSize}em";
+	}
 }
 
 <PageTitle>Video Viewer for @FormatChannelsList() (@RequestedVideoCount()) [@rows x @columns]</PageTitle>
@@ -139,9 +153,21 @@
 		// Create player containers.
         const container = document.getElementById('player-container');
 		for (let i = 1; i <= _columns * _rows; ++i) {
+			// Create per-player container (the inner one gets replaced with an iframe.)
+			const playerContainer = document.createElement('div');
+			playerContainer.className = 'single-player-container';
+			container.appendChild(playerContainer);
+
+			// Create actual player div, that the player gets created in (but it gets changed to an iframe).
 			const playerDiv = document.createElement('div');
 			playerDiv.id = `player${i}`;
-			container.appendChild(playerDiv);
+			playerContainer.appendChild(playerDiv);
+
+			// Create video title element.
+			const videoTitle = document.createElement('div');
+			videoTitle.className = 'video-title';
+			videoTitle.innerText = 'Loading...';
+			playerContainer.appendChild(videoTitle);
         }
 
 		// Load in the iframe player API code asynhcronously.
@@ -161,7 +187,8 @@
 				height: '',
                 videoId: _videoPlaylists[i][0],
                 playerVars: {
-                    'playsinline': 1
+                    'playsinline': 1,
+					'controls': 0
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -174,7 +201,9 @@
         }
 	}
 
+	/// When the player is ready, load in the appropriate video playlist.
 	function onPlayerReady(event) {
+		window.player = event.target;
 		const player = event.target;
 		const playerIndex = player.options.playerIndex;
 
@@ -184,9 +213,16 @@
 		player.playVideo();
 	}
 
+	// When the playing video changes, update the video title.
 	function onPlayerStateChange(event) {
-		console.log('On player state change:');
-		console.log(event);
+		const videoContainer = event?.target?.g?.parentNode;
+		const videoTitle = event?.target?.videoTitle;
+
+		if (videoContainer && videoTitle) {
+			console.log('Updating video title');
+            const videoTitleElement = videoContainer.getElementsByClassName('video-title')[0];
+			videoTitleElement.innerText = videoTitle;
+		}
 	}
 </script>
 
@@ -198,6 +234,7 @@
 		overflow: hidden;
 	}
 
+	/* Main player container for all players */
 	#player-container {
 		width: 100%;
 		height: 100%;
@@ -205,8 +242,23 @@
 		flex-wrap: wrap;
 	}
 
-	#player-container > iframe {
+	/* Inner player container for a single player */
+	#player-container > .single-player-container {
+		position: relative;
+		display: flex;
 		flex-grow: 1;
 		flex-basis: @FlexBasis();
+	}
+
+	/* The video title */
+	#player-container > .single-player-container > .video-title {
+		position: absolute;
+		color: white;
+		font-size: @TitleSize();
+	}
+
+	/* The player itself */
+	#player-container > .single-player-container > iframe {
+		flex-grow: 1;
 	}
 </style>
