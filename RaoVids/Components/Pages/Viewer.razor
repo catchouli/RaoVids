@@ -187,8 +187,7 @@
 				height: '',
                 videoId: _videoPlaylists[i][0],
                 playerVars: {
-                    'playsinline': 1,
-					'controls': 0
+                    'playsinline': 1
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -255,6 +254,7 @@
 		position: absolute;
 		color: white;
 		font-size: @TitleSize();
+		pointer-events: none;
 	}
 
 	/* The player itself */
