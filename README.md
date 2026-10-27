@@ -31,6 +31,19 @@ A youtube data API key is necessary for video scanning to work.
 ## How to run (production)
 Use the provided docker image (ghcr.io/catchouli/raovids) or helm chart (in the `helm` directory). If using docker directly, you'll need to specify the configuration either by binding a .env file at /app or using environment variables. See `.env.example` for a configuration example.
 
+The helm chart reads both configuration values from an existing Secret, which you create yourself:
+
+```
+kubectl create secret generic raovids \
+  --from-literal=DatabaseConnString='Host=...; Database=...; Username=...; Password=...' \
+  --from-literal=YoutubeDataApiKey='...'
+
+helm upgrade --install raovids ./helm --set existingSecret=raovids \
+  --set ingress.enabled=true --set ingress.host=raovids.example.com
+```
+
+See `helm/values.yaml` for the other settings (ingress class, annotations, TLS secret, resources). The app applies its database migrations at startup, so its database user needs to own its tables.
+
 ## Configuration values
 The application will read configuration values from either the environment or a .env file, see the file `.env.example` for the default dev configuration.
 

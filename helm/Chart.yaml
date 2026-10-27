@@ -1,0 +1,6 @@
+apiVersion: v2
+name: raovids
+description: Random youtube video aggregator and player
+type: application
+version: 0.1.0
+appVersion: "v1.2.1"

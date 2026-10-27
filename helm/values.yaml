@@ -1,0 +1,40 @@
+image:
+  repository: ghcr.io/catchouli/raovids
+  # Defaults to the chart's appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+# Name of an existing Secret with the keys DatabaseConnString and YoutubeDataApiKey
+# (see "Configuration values" in the README). Required; the chart never creates it.
+existingSecret: ""
+
+service:
+  port: 8080
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: ""
+  # Leave empty to serve plain HTTP.
+  tlsSecretName: ""
+
+resources:
+  limits:
+    cpu: 750m
+    memory: 256Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
